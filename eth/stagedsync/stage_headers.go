@@ -824,6 +824,10 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}
+	maxInsertedAtOnce := cfg.syncBlocksAtOnce
+	if maxInsertedAtOnce > 0 {
+		log.Warn("Setting block at once limit for inserting", "limit", maxInsertedAtOnce)
+	}
 
 Loop:
 	for !stopped {
@@ -884,12 +888,10 @@ Loop:
 		//progress2 := cfg.hd.Progress()
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
-		var maxInsertedAtOnce = cfg.syncBlocksAtOnce
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce, timeLimitPtr); err != nil {
 			return err
 		}
 		progress := cfg.hd.Progress()
-		//log.Info("Header cycle after insert headers: ", "progress", progress)
 		if initialCycle && (maxInsertedAtOnce > 0 && progress-prevProgress > maxInsertedAtOnce) {
 			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
@@ -901,13 +903,6 @@ Loop:
 				break
 			}
 		}
-		/*
-			if !initialCycle && progress > prevProgress+1000 {
-				log.Info("Breaking cycle: ", "progress", progress, "prevProgress", prevProgress)
-				break
-			}*/
-
-		//logProgressHeaders(logPrefix, prevProgress, progress)
 
 		if test {
 			announces := cfg.hd.GrabAnnounces()
