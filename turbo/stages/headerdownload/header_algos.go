@@ -607,7 +607,7 @@ func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficul
 	var force bool
 	var blocksToTTD uint64
 	var currentInserted uint64
-	for more && currentInserted < maxInsertedAtOnce {
+	for more {
 		if more, force, blocksToTTD, err = hd.InsertHeader(hf, terminalTotalDifficulty, logPrefix, logChannel); err != nil {
 			return false, err
 		}
@@ -616,13 +616,18 @@ func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficul
 		}
 		currentInserted += 1
 
-		if more && currentInserted%100 == 1 {
-			log.Info("Insert header", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
-		}
-		if currentInserted > maxInsertedAtOnce {
-			log.Info("Breaking inserting loop", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
+		if maxInsertedAtOnce > 0 && currentInserted >= maxInsertedAtOnce {
+			log.Info("Headers insert limit hit", "inserted:", currentInserted, "maximum:", maxInsertedAtOnce)
 			break
 		}
+		/*
+			if more && currentInserted%100 == 1 {
+				log.Info("Insert header", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
+			}
+			if currentInserted > maxInsertedAtOnce {
+				log.Info("Breaking inserting loop", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
+				break
+			}*/
 	}
 	if blocksToTTD > 0 {
 		log.Info("Estimated to reaching TTD", "blocks", blocksToTTD)

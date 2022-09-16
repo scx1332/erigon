@@ -52,6 +52,12 @@ type HeadersCfg struct {
 	memoryOverlay     bool
 	tmpdir            string
 
+	// additional flags to limited stage sync
+	limitedSync          bool
+	syncUpToBlock        uint64
+	syncBlocksAtOnce     uint64
+	syncProcessAfterTime time.Duration
+
 	snapshots          *snapshotsync.RoSnapshots
 	snapshotDownloader proto_downloader.DownloaderClient
 	blockReader        services.FullBlockReader
@@ -75,27 +81,35 @@ func StageHeadersCfg(
 	snapshotDownloader proto_downloader.DownloaderClient,
 	blockReader services.FullBlockReader,
 	tmpdir string,
+	limitedSync bool,
+	syncUpToBlock uint64,
+	syncBlocksAtOnce uint64,
+	syncProcessAfterTime time.Duration,
 	dbEventNotifier snapshotsync.DBEventNotifier,
 	notifications *Notifications,
 	forkValidator *engineapi.ForkValidator) HeadersCfg {
 	return HeadersCfg{
-		db:                 db,
-		hd:                 headerDownload,
-		bodyDownload:       bodyDownload,
-		chainConfig:        chainConfig,
-		headerReqSend:      headerReqSend,
-		announceNewHashes:  announceNewHashes,
-		penalize:           penalize,
-		batchSize:          batchSize,
-		tmpdir:             tmpdir,
-		noP2PDiscovery:     noP2PDiscovery,
-		snapshots:          snapshots,
-		snapshotDownloader: snapshotDownloader,
-		blockReader:        blockReader,
-		dbEventNotifier:    dbEventNotifier,
-		forkValidator:      forkValidator,
-		notifications:      notifications,
-		memoryOverlay:      memoryOverlay,
+		db:                   db,
+		hd:                   headerDownload,
+		bodyDownload:         bodyDownload,
+		chainConfig:          chainConfig,
+		headerReqSend:        headerReqSend,
+		announceNewHashes:    announceNewHashes,
+		penalize:             penalize,
+		batchSize:            batchSize,
+		tmpdir:               tmpdir,
+		limitedSync:          limitedSync,
+		syncUpToBlock:        syncUpToBlock,
+		syncBlocksAtOnce:     syncBlocksAtOnce,
+		syncProcessAfterTime: syncProcessAfterTime,
+		noP2PDiscovery:       noP2PDiscovery,
+		snapshots:            snapshots,
+		snapshotDownloader:   snapshotDownloader,
+		blockReader:          blockReader,
+		dbEventNotifier:      dbEventNotifier,
+		forkValidator:        forkValidator,
+		notifications:        notifications,
+		memoryOverlay:        memoryOverlay,
 	}
 }
 
@@ -863,7 +877,7 @@ Loop:
 		//progress2 := cfg.hd.Progress()
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
-		var maxInsertedAtOnce uint64 = 2000
+		var maxInsertedAtOnce = cfg.syncBlocksAtOnce
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce); err != nil {
 			return err
 		}
