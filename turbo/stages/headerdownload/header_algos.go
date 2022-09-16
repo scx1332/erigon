@@ -601,17 +601,27 @@ func (hd *HeaderDownload) InsertHeader(hf FeedHeaderFunc, terminalTotalDifficult
 
 // InsertHeaders attempts to insert headers into the database, verifying them first
 // It returns true in the first return value if the system is "in sync"
-func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficulty *big.Int, logPrefix string, logChannel <-chan time.Time) (bool, error) {
+func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficulty *big.Int, logPrefix string, logChannel <-chan time.Time, maxInsertedAtOnce uint64) (bool, error) {
 	var more = true
 	var err error
 	var force bool
 	var blocksToTTD uint64
-	for more {
+	var currentInserted uint64
+	for more && currentInserted < maxInsertedAtOnce {
 		if more, force, blocksToTTD, err = hd.InsertHeader(hf, terminalTotalDifficulty, logPrefix, logChannel); err != nil {
 			return false, err
 		}
 		if force {
 			return true, nil
+		}
+		currentInserted += 1
+
+		if more && currentInserted%100 == 1 {
+			log.Info("Insert header", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
+		}
+		if currentInserted > maxInsertedAtOnce {
+			log.Info("Breaking inserting loop", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)
+			break
 		}
 	}
 	if blocksToTTD > 0 {

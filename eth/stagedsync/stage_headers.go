@@ -860,10 +860,26 @@ Loop:
 			}
 		}
 		// Load headers into the database
+		//progress2 := cfg.hd.Progress()
+		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
-		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C); err != nil {
+		var maxInsertedAtOnce uint64 = 10000
+		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce); err != nil {
 			return err
 		}
+		progress := cfg.hd.Progress()
+		//log.Info("Header cycle after insert headers: ", "progress", progress)
+		if initialCycle && progress-prevProgress > maxInsertedAtOnce {
+			log.Info("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
+			break
+		}
+		/*
+			if !initialCycle && progress > prevProgress+1000 {
+				log.Info("Breaking cycle: ", "progress", progress, "prevProgress", prevProgress)
+				break
+			}*/
+
+		//logProgressHeaders(logPrefix, prevProgress, progress)
 
 		if test {
 			announces := cfg.hd.GrabAnnounces()
