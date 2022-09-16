@@ -895,10 +895,10 @@ Loop:
 			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
 		}
-		if timeLimitSet {
+		if timeLimitSet && progress-prevProgress > 0 {
 			timeNow := time.Now()
 		 	if timeNow.After(timeLimit) {
-				log.Warn("Breaking initial cycle due to time limit: ", "currentTime", progress, "Time limit", timeNow)
+				log.Warn("Breaking initial cycle due to time limit: ", "currentTime", timeLimit, "Time limit", timeNow)
 				break
 			}
 		}
