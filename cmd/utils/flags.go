@@ -164,6 +164,26 @@ var (
 		Name:  "snapshots",
 		Usage: `Default: use snapshots "true" for BSC, Mainnet and Goerli. use snapshots "false" in all other cases`,
 	}
+	LimitedSync = cli.BoolTFlag{
+		Name:  "sync.limit",
+		Usage: `Default: false. It works only when snapshots are disabled. Limiting sync size`,
+	}
+	SyncUpToBlock = cli.Uint64Flag{
+		Name:  "sync.maxblock",
+		Usage: `Default: 0. Synchronize only to specific block and stop, 0 means no limit`,
+	}
+	SyncBlocksAtOnce = cli.Uint64Flag{
+		Name:  "sync.blocksatonce",
+		Usage: `Default: 0. Max blocks spent on inserting headers at once, 0 means no limit`,
+	}
+	SyncProcessAfterTime = cli.DurationFlag{
+		Name:  "sync.maxtime",
+		Usage: `Default: 0. Max duration spent on inserting headers at once`,
+	}
+	ForceDisableSnapshots = cli.BoolFlag{
+		Name:  "sync.forcenosnapshots",
+		Usage: `Default: false. Force disable snapshots`,
+	}
 	// Transaction pool settings
 	TxPoolDisableFlag = cli.BoolFlag{
 		Name:  "txpool.disable",
