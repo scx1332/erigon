@@ -878,7 +878,8 @@ Loop:
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
 		var maxInsertedAtOnce = cfg.syncBlocksAtOnce
-		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce); err != nil {
+		timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
+		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce, timeLimit); err != nil {
 			return err
 		}
 		progress := cfg.hd.Progress()
