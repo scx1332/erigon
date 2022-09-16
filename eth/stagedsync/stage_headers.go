@@ -818,9 +818,12 @@ func HeadersPOW(
 	var noProgressCounter int
 	var wasProgress bool
 	var lastSkeletonTime time.Time
-	timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
-	timeLimitSet := cfg.syncProcessAfterTime != 0
-	log.Warn("Setting time limit for processing", "limit", timeLimit)
+	var timeLimitPtr *time.Time
+	if cfg.syncProcessAfterTime != 0 {
+		timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
+		timeLimitPtr = &timeLimit
+		log.Warn("Setting time limit for processing", "limit", timeLimit)
+	}
 
 Loop:
 	for !stopped {
@@ -882,10 +885,6 @@ Loop:
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
 		var maxInsertedAtOnce = cfg.syncBlocksAtOnce
-		var timeLimitPtr *time.Time = nil
-		if timeLimitSet {
-			timeLimitPtr = &timeLimit
-		}
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce, timeLimitPtr); err != nil {
 			return err
 		}
@@ -895,10 +894,10 @@ Loop:
 			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
 		}
-		if timeLimitSet && progress-prevProgress > 0 {
+		if timeLimitPtr != nil && progress-prevProgress > 0 {
 			timeNow := time.Now()
-		 	if timeNow.After(timeLimit) {
-				log.Warn("Breaking initial cycle due to time limit: ", "currentTime", timeLimit, "Time limit", timeNow)
+		 	if timeNow.After(*timeLimitPtr) {
+				log.Warn("Breaking initial cycle due to time limit: ", "currentTime", *timeLimitPtr, "Time limit", timeNow)
 				break
 			}
 		}
