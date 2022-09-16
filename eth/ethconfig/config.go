@@ -242,6 +242,14 @@ type Config struct {
 
 type Sync struct {
 	UseSnapshots bool
+
+	// additional flags to limited stage sync
+	LimitedSync           bool
+	SyncUpToBlock         uint64
+	SyncBlocksAtOnce      uint64
+	SyncProcessAfterTime  time.Duration
+	ForceDisableSnapshots bool
+
 	// LoopThrottle sets a minimum time between staged loop iterations
 	LoopThrottle    time.Duration
 	ExecWorkerCount int
