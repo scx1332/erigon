@@ -886,7 +886,7 @@ Loop:
 		}
 		progress := cfg.hd.Progress()
 		//log.Info("Header cycle after insert headers: ", "progress", progress)
-		if initialCycle && progress-prevProgress > maxInsertedAtOnce {
+		if initialCycle && (maxInsertedAtOnce > 0 && progress-prevProgress > maxInsertedAtOnce) {
 			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
 		}
