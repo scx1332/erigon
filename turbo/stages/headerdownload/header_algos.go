@@ -618,15 +618,18 @@ func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficul
 		}
 		currentInserted += 1
 
-		if maxInsertedAtOnce > 0 && currentInserted >= maxInsertedAtOnce {
-			log.Info("Headers insert limit hit", "inserted:", currentInserted, "maximum:", maxInsertedAtOnce)
-			break
+		if more {
+			if maxInsertedAtOnce > 0 && currentInserted >= maxInsertedAtOnce {
+				log.Warn("Headers insert limit hit", "inserted:", currentInserted, "maximum:", maxInsertedAtOnce)
+				break
+			}
+			timeNow := time.Now()
+			if timeNow.After(insertTimeLimit) {
+				log.Warn("Headers insert time limit hit", "current:", timeNow, "limit:", insertTimeLimit)
+				break
+			}
 		}
-		timeNow := time.Now()
-		if timeNow.After(insertTimeLimit) {
-			log.Info("Headers insert time limit hit", "current:", timeNow, "limit:", insertTimeLimit)
-			break
-		}
+
 		/*
 			if more && currentInserted%100 == 1 {
 				log.Info("Insert header", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)

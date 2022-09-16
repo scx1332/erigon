@@ -818,6 +818,9 @@ func HeadersPOW(
 	var noProgressCounter int
 	var wasProgress bool
 	var lastSkeletonTime time.Time
+	timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
+	log.Warn("Setting time limit for processing", "limit", timeLimit)
+
 Loop:
 	for !stopped {
 
@@ -878,14 +881,13 @@ Loop:
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
 		var maxInsertedAtOnce = cfg.syncBlocksAtOnce
-		timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce, timeLimit); err != nil {
 			return err
 		}
 		progress := cfg.hd.Progress()
 		//log.Info("Header cycle after insert headers: ", "progress", progress)
 		if initialCycle && progress-prevProgress > maxInsertedAtOnce {
-			log.Info("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
+			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
 		}
 		/*
