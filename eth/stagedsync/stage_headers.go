@@ -863,7 +863,7 @@ Loop:
 		//progress2 := cfg.hd.Progress()
 		//log.Info("Header cycle insert headers: ", "progress", progress2)
 		var inSync bool
-		var maxInsertedAtOnce uint64 = 10000
+		var maxInsertedAtOnce uint64 = 2000
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce); err != nil {
 			return err
 		}
