@@ -607,10 +607,9 @@ func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficul
 	var err error
 	var force bool
 	var blocksToTTD uint64
-	var currentInserted uint64
 	for more {
 		if insertedBlockLimit > 0 && insertedBlockLimit <= hd.Progress() {
-			log.Warn("Inserting headers reached set block limit",  "no", currentInserted);
+			log.Warn("Breaking insert loop", "no", insertedBlockLimit);
 			//return false because system is not inSync
 			return false, nil
 		}
