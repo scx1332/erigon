@@ -908,6 +908,7 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
+		highestBlock := cfg.hd.HighestBlockPOW()
 		continueLoop := false
 		if insertBlockCountLimit > 0 {
 			if insertBlockCountLimit <= progress {
@@ -918,9 +919,9 @@ Loop:
 				}
 				break
 			}
-			if !inSync && progress - insertBlockStartHeader > 50 {
+			if !inSync && insertBlockCountLimit < highestBlock {
 				continueLoop = true
-				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
+				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit, "highest block", highestBlock)
 			}
 		}
 
