@@ -170,11 +170,11 @@ var (
 	}
 	SyncBlockCountLimitFlag = cli.Uint64Flag{
 		Name:  "sync.maxblocks",
-		Usage: `Default: 0. Synchronize only to specific block (for example sync.maxblocks=1000 means last block number 999) and prevent further syncing, 0 means no limit`,
+		Usage: `Default: 0. Synchronize only to specific block and prevent further syncing, 0 means no limit`,
 	}
 	SyncBlocksAtOnceFlag = cli.Uint64Flag{
 		Name:  "sync.blocksatonce",
-		Usage: `Default: 0. Max blocks spent on inserting headers at once, 0 means no limit`,
+		Usage: `Default: 0. Max blocks spent on inserting headers at once before going to next stage, 0 means no limit`,
 	}
 	SyncProcessAfterTimeFlag = cli.DurationFlag{
 		Name:  "sync.maxtime",
