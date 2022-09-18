@@ -21,7 +21,6 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io"
-	"log"
 	"math/big"
 	"os"
 	"path/filepath"
