@@ -824,12 +824,17 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}
-	var limitInsertedHighestBlockNum int64 = -1
+	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
-		limitBlockNumber = cfg.syncBlockCountLimit;
-		log.Warn("Setting block at once limit for inserting", "limit", maxInsertedAtOnce)
+		insertBlockCountLimit = cfg.syncBlockCountLimit;
+		log.Warn("Setting block at once limit for inserting due to insertBlockCountLimit", "limit", insertBlockCountLimit)
 	}
-
+	if cfg.syncBlocksAtOnce > 0 {
+		if insertBlockCountLimit == 0 || headerProgress + cfg.syncBlocksAtOnce < insertBlockCountLimit {
+			insertBlockCountLimit = cfg.syncBlockCountLimit;
+			log.Warn("Setting block at once limit for inserting due to block at once limit", "limit", insertBlockCountLimit)
+		}
+	}
 Loop:
 	for !stopped {
 
@@ -893,15 +898,15 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		if initialCycle && insertedBlockLimit > 0 && insertedBlockLimit <= progress {
-			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
+		if initialCycle && insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
+			log.Warn("Breaking initial cycle: ", "progress", progress, "insert cap", insertBlockCountLimit)
 			break
 		}
-		if insertedBlockLimit > 0 && insertedBlockLimit <= progress {
+		if insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
 			if initialCycle {
-				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress)
+				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
 			} else {
-				log.Warn("Breaking cycle due to reach limit: ", "progress", progress)
+				log.Warn("Breaking cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
 			}
 			break
 		}
