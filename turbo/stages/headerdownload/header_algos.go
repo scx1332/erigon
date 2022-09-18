@@ -735,12 +735,6 @@ func (hd *HeaderDownload) Progress() uint64 {
 	}
 }
 
-func (hd *HeaderDownload) HighestBlockPOW() uint64 {
-	hd.lock.RLock()
-	defer hd.lock.RUnlock()
-	return hd.topSeenHeightPoW
-}
-
 func (hd *HeaderDownload) HasLink(linkHash common.Hash) bool {
 	hd.lock.RLock()
 	defer hd.lock.RUnlock()

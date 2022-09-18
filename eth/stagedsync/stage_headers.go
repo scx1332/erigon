@@ -824,6 +824,7 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}*/
+	insertBlockStartHeader := headerProgress
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
 		if headerProgress >= cfg.syncBlockCountLimit {
@@ -907,7 +908,6 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		highestBlock := cfg.hd.HighestBlockPOW()
 		continueLoop := false
 		if insertBlockCountLimit > 0 {
 			if insertBlockCountLimit <= progress {
@@ -918,13 +918,9 @@ Loop:
 				}
 				break
 			}
-			if !inSync && insertBlockCountLimit < highestBlock {
+			if !inSync && progress - insertBlockStartHeader > 50 {
 				continueLoop = true
-				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit, "highest block", highestBlock)
-			} else
-			{
-				log.Warn("NOT Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit, "highest block", highestBlock)
-
+				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
 			}
 		}
 
