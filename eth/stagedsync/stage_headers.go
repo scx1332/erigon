@@ -824,6 +824,7 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}*/
+	insertBlockStartHeader := headerProgress
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
 		if headerProgress >= cfg.syncBlockCountLimit {
@@ -903,25 +904,33 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		if insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
-			if initialCycle {
-				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
-			} else {
-				log.Warn("Breaking cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
-			}
-			break
-		}
-
-		/*
-		if timeLimitPtr != nil && progress-prevProgress > 0 {
-			timeNow := time.Now()
-		 	if timeNow.After(*timeLimitPtr) {
-				log.Warn("Breaking initial cycle due to time limit: ", "currentTime", *timeLimitPtr, "Time limit", timeNow)
+		continueLoop := false
+		if insertBlockCountLimit > 0 {
+			if insertBlockCountLimit <= progress {
+				if initialCycle {
+					log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
+				} else {
+					log.Warn("Breaking cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
+				}
 				break
 			}
+			if !inSync && progress - insertBlockStartHeader > 50 {
+				continueLoop := true
+				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
+			}
 		}
 
-		 */
+
+			/*
+			if timeLimitPtr != nil && progress-prevProgress > 0 {
+				timeNow := time.Now()
+				 if timeNow.After(*timeLimitPtr) {
+					log.Warn("Breaking initial cycle due to time limit: ", "currentTime", *timeLimitPtr, "Time limit", timeNow)
+					break
+				}
+			}
+
+			 */
 
 		if test {
 			announces := cfg.hd.GrabAnnounces()
@@ -933,7 +942,7 @@ Loop:
 		if headerInserter.BestHeaderChanged() { // We do not break unless there best header changed
 			noProgressCounter = 0
 			wasProgress = true
-			if !initialCycle {
+			if !initialCycle && !continueLoop {
 				// if this is not an initial cycle, we need to react quickly when new headers are coming in
 				break
 			}
