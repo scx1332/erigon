@@ -826,6 +826,11 @@ func HeadersPOW(
 	}
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
+		if headerProgress > cfg.syncBlockCountLimit {
+			log.Warn("Reached sync block progress when inserting headers", "progress", headerProgress, "syncBlockCountLimit", cfg.syncBlockCountLimit)
+			time.Sleep(30 * time.Second)
+			return nil
+		}
 		insertBlockCountLimit = cfg.syncBlockCountLimit;
 		log.Warn("Setting block at once limit for inserting due to insertBlockCountLimit", "limit", insertBlockCountLimit)
 	}
