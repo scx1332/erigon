@@ -915,7 +915,7 @@ Loop:
 				break
 			}
 			if !inSync && progress - insertBlockStartHeader > 50 {
-				continueLoop := true
+				continueLoop = true
 				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
 			}
 		}
