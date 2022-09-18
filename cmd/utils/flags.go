@@ -21,6 +21,7 @@ import (
 	"crypto/ecdsa"
 	"fmt"
 	"io"
+	"log"
 	"math/big"
 	"os"
 	"path/filepath"
@@ -169,8 +170,8 @@ var (
 		Usage: `Default: false. It works only when snapshots are disabled. Limiting sync size`,
 	}
 	SyncBlockCountLimitFlag = cli.Uint64Flag{
-		Name:  "sync.maxblock",
-		Usage: `Default: 0. Synchronize only to specific block and stop, 0 means no limit`,
+		Name:  "sync.maxblocks",
+		Usage: `Default: 0. Synchronize only to specific block (for example sync.maxblocks=1000 means last block number 999) and prevent further syncing, 0 means no limit`,
 	}
 	SyncBlocksAtOnceFlag = cli.Uint64Flag{
 		Name:  "sync.blocksatonce",
