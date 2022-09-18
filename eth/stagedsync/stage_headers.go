@@ -826,7 +826,7 @@ func HeadersPOW(
 	}*/
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
-		if headerProgress > cfg.syncBlockCountLimit {
+		if headerProgress >= cfg.syncBlockCountLimit {
 			log.Warn("Reached sync block progress when inserting headers", "progress", headerProgress, "syncBlockCountLimit", cfg.syncBlockCountLimit)
 			time.Sleep(30 * time.Second)
 			return nil
@@ -903,7 +903,7 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		if insertBlockCountLimit > 0 && insertBlockCountLimit < progress {
+		if insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
 			if initialCycle {
 				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
 			} else {
@@ -920,7 +920,7 @@ Loop:
 				break
 			}
 		}
-		
+
 		 */
 
 		if test {
