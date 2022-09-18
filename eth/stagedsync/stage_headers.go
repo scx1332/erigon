@@ -921,6 +921,10 @@ Loop:
 			if !inSync && insertBlockCountLimit < highestBlock {
 				continueLoop = true
 				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit, "highest block", highestBlock)
+			} else
+			{
+				log.Warn("NOT Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit, "highest block", highestBlock)
+
 			}
 		}
 
