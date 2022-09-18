@@ -168,7 +168,7 @@ var (
 		Name:  "sync.limit",
 		Usage: `Default: false. It works only when snapshots are disabled. Limiting sync size`,
 	}
-	SyncUpToBlockFlag = cli.Uint64Flag{
+	SyncBlockCountLimitFlag = cli.Uint64Flag{
 		Name:  "sync.maxblock",
 		Usage: `Default: 0. Synchronize only to specific block and stop, 0 means no limit`,
 	}
@@ -1453,7 +1453,7 @@ func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.C
 	cfg.Sync.UseSnapshots = ctx.GlobalBoolT(SnapshotFlag.Name)
 
 	cfg.Sync.LimitedSync = ctx.GlobalBool(LimitedSyncFlag.Name)
-	cfg.Sync.SyncUpToBlock = ctx.GlobalUint64(SyncUpToBlockFlag.Name)
+	cfg.Sync.SyncBlockCountLimit = ctx.GlobalUint64(SyncBlockCountLimitFlag.Name)
 	cfg.Sync.SyncBlocksAtOnce = ctx.GlobalUint64(SyncBlocksAtOnceFlag.Name)
 	cfg.Sync.SyncProcessAfterTime = ctx.GlobalDuration(SyncProcessAfterTimeFlag.Name)
 	cfg.Sync.ForceDisableSnapshots = ctx.GlobalBool(ForceDisableSnapshotsFlag.Name)

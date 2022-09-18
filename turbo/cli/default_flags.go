@@ -12,7 +12,7 @@ var DefaultFlags = []cli.Flag{
 	utils.EthashDatasetDirFlag,
 	utils.SnapshotFlag,
 	utils.LimitedSyncFlag,
-	utils.SyncUpToBlockFlag,
+	utils.SyncBlockCountLimitFlag,
 	utils.SyncBlocksAtOnceFlag,
 	utils.SyncProcessAfterTimeFlag,
 	utils.ForceDisableSnapshotsFlag,

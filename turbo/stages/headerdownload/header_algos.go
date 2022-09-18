@@ -602,37 +602,24 @@ func (hd *HeaderDownload) InsertHeader(hf FeedHeaderFunc, terminalTotalDifficult
 // InsertHeaders attempts to insert headers into the database, verifying them first
 // It returns true in the first return value if the system is "in sync"
 func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficulty *big.Int, logPrefix string, logChannel <-chan time.Time,
-	maxInsertedAtOnce uint64,
-	insertTimeLimit *time.Time) (bool, error) {
+	insertedBlockLimit uint64) (bool, error) {
 	var more = true
 	var err error
 	var force bool
 	var blocksToTTD uint64
 	var currentInserted uint64
 	for more {
-		log.Warn("Inserting header",  "no", currentInserted);
+		if insertedBlockLimit > 0 && insertedBlockLimit <= hd.Progress() {
+			log.Warn("Inserting headers reached set block limit",  "no", currentInserted);
+			//return false because system is not inSync
+			return false, nil
+		}
 		if more, force, blocksToTTD, err = hd.InsertHeader(hf, terminalTotalDifficulty, logPrefix, logChannel); err != nil {
 			return false, err
 		}
 		if force {
 			return true, nil
 		}
-		currentInserted += 1
-
-		if more {
-			if maxInsertedAtOnce > 0 && currentInserted >= maxInsertedAtOnce {
-				log.Warn("Headers insert limit hit", "inserted:", currentInserted, "maximum:", maxInsertedAtOnce)
-				break
-			}
-			if insertTimeLimit != nil {
-				timeNow := time.Now()
-				if timeNow.After(*insertTimeLimit) {
-					log.Warn("Headers insert time limit hit", "current:", timeNow, "limit:", insertTimeLimit)
-					break
-				}
-			}
-		}
-
 		/*
 			if more && currentInserted%100 == 1 {
 				log.Info("Insert header", "currentInserted", currentInserted, "maximum:", maxInsertedAtOnce)

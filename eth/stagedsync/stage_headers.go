@@ -54,7 +54,7 @@ type HeadersCfg struct {
 
 	// additional flags to limited stage sync
 	limitedSync          bool
-	syncUpToBlock        uint64
+	syncBlockCountLimit  uint64
 	syncBlocksAtOnce     uint64
 	syncProcessAfterTime time.Duration
 
@@ -82,7 +82,7 @@ func StageHeadersCfg(
 	blockReader services.FullBlockReader,
 	tmpdir string,
 	limitedSync bool,
-	syncUpToBlock uint64,
+	syncBlockCountLimit uint64,
 	syncBlocksAtOnce uint64,
 	syncProcessAfterTime time.Duration,
 	dbEventNotifier snapshotsync.DBEventNotifier,
@@ -99,7 +99,7 @@ func StageHeadersCfg(
 		batchSize:            batchSize,
 		tmpdir:               tmpdir,
 		limitedSync:          limitedSync,
-		syncUpToBlock:        syncUpToBlock,
+		syncBlockCountLimit:        syncBlockCountLimit,
 		syncBlocksAtOnce:     syncBlocksAtOnce,
 		syncProcessAfterTime: syncProcessAfterTime,
 		noP2PDiscovery:       noP2PDiscovery,
@@ -824,8 +824,9 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}
-	maxInsertedAtOnce := cfg.syncBlocksAtOnce
-	if maxInsertedAtOnce > 0 {
+	var limitInsertedHighestBlockNum int64 = -1
+	if cfg.syncBlockCountLimit > 0 {
+		limitBlockNumber = cfg.syncBlockCountLimit;
 		log.Warn("Setting block at once limit for inserting", "limit", maxInsertedAtOnce)
 	}
 
@@ -892,10 +893,19 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		if initialCycle && (maxInsertedAtOnce > 0 && progress-prevProgress > maxInsertedAtOnce) {
+		if initialCycle && insertedBlockLimit > 0 && insertedBlockLimit <= progress {
 			log.Warn("Breaking initial cycle: ", "progress", progress, "prevProgress", prevProgress)
 			break
 		}
+		if insertedBlockLimit > 0 && insertedBlockLimit <= progress {
+			if initialCycle {
+				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress)
+			} else {
+				log.Warn("Breaking cycle due to reach limit: ", "progress", progress)
+			}
+			break
+		}
+
 		if timeLimitPtr != nil && progress-prevProgress > 0 {
 			timeNow := time.Now()
 		 	if timeNow.After(*timeLimitPtr) {

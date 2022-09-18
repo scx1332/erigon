@@ -245,7 +245,7 @@ type Sync struct {
 
 	// additional flags to limited stage sync
 	LimitedSync           bool
-	SyncUpToBlock         uint64
+	SyncBlockCountLimit   uint64
 	SyncBlocksAtOnce      uint64
 	SyncProcessAfterTime  time.Duration
 	ForceDisableSnapshots bool
