@@ -818,12 +818,12 @@ func HeadersPOW(
 	var noProgressCounter int
 	var wasProgress bool
 	var lastSkeletonTime time.Time
-	var timeLimitPtr *time.Time
+	/*var timeLimitPtr *time.Time
 	if cfg.syncProcessAfterTime != 0 {
 		timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
-	}
+	}*/
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
 		if headerProgress > cfg.syncBlockCountLimit {
@@ -903,11 +903,7 @@ Loop:
 			return err
 		}
 		progress := cfg.hd.Progress()
-		if initialCycle && insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
-			log.Warn("Breaking initial cycle: ", "progress", progress, "insert cap", insertBlockCountLimit)
-			break
-		}
-		if insertBlockCountLimit > 0 && insertBlockCountLimit <= progress {
+		if insertBlockCountLimit > 0 && insertBlockCountLimit < progress {
 			if initialCycle {
 				log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
 			} else {
@@ -916,6 +912,7 @@ Loop:
 			break
 		}
 
+		/*
 		if timeLimitPtr != nil && progress-prevProgress > 0 {
 			timeNow := time.Now()
 		 	if timeNow.After(*timeLimitPtr) {
@@ -923,6 +920,8 @@ Loop:
 				break
 			}
 		}
+		
+		 */
 
 		if test {
 			announces := cfg.hd.GrabAnnounces()
