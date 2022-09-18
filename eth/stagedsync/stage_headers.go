@@ -885,8 +885,8 @@ Loop:
 			}
 		}
 		// Load headers into the database
-		//progress2 := cfg.hd.Progress()
-		//log.Info("Header cycle insert headers: ", "progress", progress2)
+		progress2 := cfg.hd.Progress()
+		log.Warn("Header cycle insert headers: ", "progress", progress2, "prevProgress", prevProgress)
 		var inSync bool
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, maxInsertedAtOnce, timeLimitPtr); err != nil {
 			return err
