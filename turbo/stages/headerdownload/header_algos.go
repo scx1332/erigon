@@ -738,11 +738,7 @@ func (hd *HeaderDownload) Progress() uint64 {
 func (hd *HeaderDownload) HighestBlockPOW() uint64 {
 	hd.lock.RLock()
 	defer hd.lock.RUnlock()
-	if hd.posSync && hd.posAnchor != nil {
-		return hd.topSeenHeightPoW
-	} else {
-		return hd.highestInDb
-	}
+	return hd.topSeenHeightPoW
 }
 
 func (hd *HeaderDownload) HasLink(linkHash common.Hash) bool {
