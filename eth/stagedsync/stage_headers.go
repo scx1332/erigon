@@ -826,6 +826,7 @@ func HeadersPOW(
 		timeLimitPtr = &timeLimit
 		log.Warn("Setting time limit for processing", "limit", timeLimit)
 	}*/
+	insertBlockStartHeader := headerProgress
 	var insertBlockCountLimit uint64 = 0
 	if cfg.syncBlockCountLimit > 0 {
 		if headerProgress >= cfg.syncBlockCountLimit {
@@ -923,9 +924,9 @@ Loop:
 				}
 				break
 			}
-			if !inSync && !globalWasSynced {
+			if !inSync && progress - insertBlockStartHeader > 50 && !globalWasSynced {
 				continueLoop = true
-				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
+				//log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
 			}
 		}
 
