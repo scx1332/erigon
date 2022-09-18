@@ -840,6 +840,10 @@ func HeadersPOW(
 			insertBlockCountLimit = headerProgress + cfg.syncBlocksAtOnce;
 			log.Warn("Setting block at once limit for inserting due to block at once limit", "limit", insertBlockCountLimit)
 		}
+		//test
+		if initialCycle {
+			insertBlockCountLimit = headerProgress + 1000;
+		}
 	}
 Loop:
 	for !stopped {
