@@ -610,6 +610,7 @@ func (hd *HeaderDownload) InsertHeaders(hf FeedHeaderFunc, terminalTotalDifficul
 	var blocksToTTD uint64
 	var currentInserted uint64
 	for more {
+		log.Warn("Inserting header",  "no", currentInserted);
 		if more, force, blocksToTTD, err = hd.InsertHeader(hf, terminalTotalDifficulty, logPrefix, logChannel); err != nil {
 			return false, err
 		}
