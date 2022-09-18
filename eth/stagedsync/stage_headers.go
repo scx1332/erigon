@@ -753,6 +753,8 @@ func handleInterrupt(interrupt engineapi.Interrupt, cfg HeadersCfg, tx kv.RwTx, 
 	return false, nil
 }
 
+var globalWasSynced = false;
+
 // HeadersPOW progresses Headers stage for Proof-of-Work headers
 func HeadersPOW(
 	s *StageState,
@@ -907,6 +909,10 @@ Loop:
 		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, insertBlockCountLimit); err != nil {
 			return err
 		}
+		if inSync {
+			//remember that we were in sync and switch operating mode
+			globalWasSynced = true
+		}
 		progress := cfg.hd.Progress()
 		continueLoop := false
 		if insertBlockCountLimit > 0 {
@@ -918,7 +924,7 @@ Loop:
 				}
 				break
 			}
-			if !inSync && progress - insertBlockStartHeader > 50 {
+			if !inSync && !globalWasSynced {
 				continueLoop = true
 				log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
 			}
