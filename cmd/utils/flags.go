@@ -164,6 +164,26 @@ var (
 		Name:  "snapshots",
 		Usage: `Default: use snapshots "true" for BSC, Mainnet and Goerli. use snapshots "false" in all other cases`,
 	}
+	LimitedSyncFlag = cli.BoolTFlag{
+		Name:  "sync.limit",
+		Usage: `Default: false. It works only when snapshots are disabled. Limiting sync size`,
+	}
+	SyncBlockCountLimitFlag = cli.Uint64Flag{
+		Name:  "sync.maxblocks",
+		Usage: `Default: 0. Synchronize only to specific block and prevent further syncing, 0 means no limit`,
+	}
+	SyncBlocksAtOnceFlag = cli.Uint64Flag{
+		Name:  "sync.blocksatonce",
+		Usage: `Default: 0. Max blocks spent on inserting headers at once before going to next stage, 0 means no limit`,
+	}
+	SyncProcessAfterTimeFlag = cli.DurationFlag{
+		Name:  "sync.maxtime",
+		Usage: `Default: 0. Max duration spent on inserting headers at once`,
+	}
+	ForceDisableSnapshotsFlag = cli.BoolFlag{
+		Name:  "sync.forcenosnapshots",
+		Usage: `Default: false. Force disable snapshots`,
+	}
 	// Transaction pool settings
 	TxPoolDisableFlag = cli.BoolFlag{
 		Name:  "txpool.disable",
@@ -1431,6 +1451,13 @@ func CheckExclusive(ctx *cli.Context, args ...interface{}) {
 // SetEthConfig applies eth-related command line flags to the config.
 func SetEthConfig(ctx *cli.Context, nodeConfig *nodecfg.Config, cfg *ethconfig.Config) {
 	cfg.Sync.UseSnapshots = ctx.GlobalBoolT(SnapshotFlag.Name)
+
+	cfg.Sync.LimitedSync = ctx.GlobalBool(LimitedSyncFlag.Name)
+	cfg.Sync.SyncBlockCountLimit = ctx.GlobalUint64(SyncBlockCountLimitFlag.Name)
+	cfg.Sync.SyncBlocksAtOnce = ctx.GlobalUint64(SyncBlocksAtOnceFlag.Name)
+	cfg.Sync.SyncProcessAfterTime = ctx.GlobalDuration(SyncProcessAfterTimeFlag.Name)
+	cfg.Sync.ForceDisableSnapshots = ctx.GlobalBool(ForceDisableSnapshotsFlag.Name)
+
 	cfg.Dirs = nodeConfig.Dirs
 	cfg.MemoryOverlay = ctx.GlobalBool(MemoryOverlayFlag.Name)
 	cfg.Snapshot.KeepBlocks = ctx.GlobalBool(SnapKeepBlocksFlag.Name)

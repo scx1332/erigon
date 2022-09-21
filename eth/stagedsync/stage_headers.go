@@ -52,6 +52,12 @@ type HeadersCfg struct {
 	memoryOverlay     bool
 	tmpdir            string
 
+	// additional flags to limited stage sync
+	limitedSync          bool
+	syncBlockCountLimit  uint64
+	syncBlocksAtOnce     uint64
+	syncProcessAfterTime time.Duration
+
 	snapshots          *snapshotsync.RoSnapshots
 	snapshotDownloader proto_downloader.DownloaderClient
 	blockReader        services.FullBlockReader
@@ -75,27 +81,35 @@ func StageHeadersCfg(
 	snapshotDownloader proto_downloader.DownloaderClient,
 	blockReader services.FullBlockReader,
 	tmpdir string,
+	limitedSync bool,
+	syncBlockCountLimit uint64,
+	syncBlocksAtOnce uint64,
+	syncProcessAfterTime time.Duration,
 	dbEventNotifier snapshotsync.DBEventNotifier,
 	notifications *Notifications,
 	forkValidator *engineapi.ForkValidator) HeadersCfg {
 	return HeadersCfg{
-		db:                 db,
-		hd:                 headerDownload,
-		bodyDownload:       bodyDownload,
-		chainConfig:        chainConfig,
-		headerReqSend:      headerReqSend,
-		announceNewHashes:  announceNewHashes,
-		penalize:           penalize,
-		batchSize:          batchSize,
-		tmpdir:             tmpdir,
-		noP2PDiscovery:     noP2PDiscovery,
-		snapshots:          snapshots,
-		snapshotDownloader: snapshotDownloader,
-		blockReader:        blockReader,
-		dbEventNotifier:    dbEventNotifier,
-		forkValidator:      forkValidator,
-		notifications:      notifications,
-		memoryOverlay:      memoryOverlay,
+		db:                   db,
+		hd:                   headerDownload,
+		bodyDownload:         bodyDownload,
+		chainConfig:          chainConfig,
+		headerReqSend:        headerReqSend,
+		announceNewHashes:    announceNewHashes,
+		penalize:             penalize,
+		batchSize:            batchSize,
+		tmpdir:               tmpdir,
+		limitedSync:          limitedSync,
+		syncBlockCountLimit:        syncBlockCountLimit,
+		syncBlocksAtOnce:     syncBlocksAtOnce,
+		syncProcessAfterTime: syncProcessAfterTime,
+		noP2PDiscovery:       noP2PDiscovery,
+		snapshots:            snapshots,
+		snapshotDownloader:   snapshotDownloader,
+		blockReader:          blockReader,
+		dbEventNotifier:      dbEventNotifier,
+		forkValidator:        forkValidator,
+		notifications:        notifications,
+		memoryOverlay:        memoryOverlay,
 	}
 }
 
@@ -739,6 +753,8 @@ func handleInterrupt(interrupt engineapi.Interrupt, cfg HeadersCfg, tx kv.RwTx, 
 	return false, nil
 }
 
+var globalWasSynced = false;
+
 // HeadersPOW progresses Headers stage for Proof-of-Work headers
 func HeadersPOW(
 	s *StageState,
@@ -804,6 +820,33 @@ func HeadersPOW(
 	var noProgressCounter int
 	var wasProgress bool
 	var lastSkeletonTime time.Time
+	/*var timeLimitPtr *time.Time
+	if cfg.syncProcessAfterTime != 0 {
+		timeLimit := time.Now().Add(cfg.syncProcessAfterTime)
+		timeLimitPtr = &timeLimit
+		log.Warn("Setting time limit for processing", "limit", timeLimit)
+	}*/
+	insertBlockStartHeader := headerProgress
+	var insertBlockCountLimit uint64 = 0
+	if cfg.syncBlockCountLimit > 0 {
+		if headerProgress >= cfg.syncBlockCountLimit {
+			log.Warn("Reached sync block progress when inserting headers", "progress", headerProgress, "syncBlockCountLimit", cfg.syncBlockCountLimit)
+			time.Sleep(30 * time.Second)
+			return nil
+		}
+		insertBlockCountLimit = cfg.syncBlockCountLimit;
+		log.Warn("Setting block at once limit for inserting due to insertBlockCountLimit", "limit", insertBlockCountLimit)
+	}
+	if cfg.syncBlocksAtOnce > 0 {
+		if insertBlockCountLimit == 0 || headerProgress + cfg.syncBlocksAtOnce < insertBlockCountLimit {
+			insertBlockCountLimit = headerProgress + cfg.syncBlocksAtOnce;
+			log.Warn("Setting block at once limit for inserting due to block at once limit", "limit", insertBlockCountLimit)
+		}
+		//test
+		/*if initialCycle {
+			insertBlockCountLimit = headerProgress + 1000;
+		}*/
+	}
 Loop:
 	for !stopped {
 
@@ -860,10 +903,44 @@ Loop:
 			}
 		}
 		// Load headers into the database
+		//progress2 := cfg.hd.Progress()
+		//log.Warn("Header cycle insert headers: ", "progress", progress2, "prevProgress", prevProgress)
 		var inSync bool
-		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C); err != nil {
+		if inSync, err = cfg.hd.InsertHeaders(headerInserter.NewFeedHeaderFunc(tx, cfg.blockReader), cfg.chainConfig.TerminalTotalDifficulty, logPrefix, logEvery.C, insertBlockCountLimit); err != nil {
 			return err
 		}
+		if inSync {
+			//remember that we were in sync and switch operating mode
+			globalWasSynced = true
+		}
+		progress := cfg.hd.Progress()
+		continueLoop := false
+		if insertBlockCountLimit > 0 {
+			if insertBlockCountLimit <= progress {
+				if initialCycle {
+					log.Warn("Breaking initial cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
+				} else {
+					log.Warn("Breaking cycle due to reach limit: ", "progress", progress, "insert cap", insertBlockCountLimit)
+				}
+				break
+			}
+			if !inSync && progress - insertBlockStartHeader > 50 && !globalWasSynced {
+				continueLoop = true
+				//log.Warn("Continue loop ", "progress", progress, "insert cap", insertBlockCountLimit)
+			}
+		}
+
+
+			/*
+			if timeLimitPtr != nil && progress-prevProgress > 0 {
+				timeNow := time.Now()
+				 if timeNow.After(*timeLimitPtr) {
+					log.Warn("Breaking initial cycle due to time limit: ", "currentTime", *timeLimitPtr, "Time limit", timeNow)
+					break
+				}
+			}
+
+			 */
 
 		if test {
 			announces := cfg.hd.GrabAnnounces()
@@ -875,7 +952,7 @@ Loop:
 		if headerInserter.BestHeaderChanged() { // We do not break unless there best header changed
 			noProgressCounter = 0
 			wasProgress = true
-			if !initialCycle {
+			if !initialCycle && !continueLoop {
 				// if this is not an initial cycle, we need to react quickly when new headers are coming in
 				break
 			}
